@@ -60,17 +60,13 @@ def player_to_act_preflop(no_of_players, key_positions):
 
     return player_to_act
 
-def make_decision(hands, player_to_act, no_of_players, highest_bet, preflop, folded, chips):
-    # Find player to act if players have folded
-    while folded[player_to_act]:
-        player_to_act = (player_to_act + 1) % no_of_players
+def make_decision(hands, player_to_act, no_of_players, highest_bet, preflop, folded, chips, money_in_pot):
+    print(f"Player {player_to_act}, your hand is {hands[player_to_act]} and you have {chips[player_to_act]} chips. The amount to call is {highest_bet - money_in_pot[player_to_act]}")
 
-    print(f"Player {player_to_act}, your hand is {hands[player_to_act]} and you have {chips[player_to_act]} chips")
-
-    if preflop or highest_bet > 0:
-        action = input("Would you like to fold, call or raise? ")
-    else:
+    if money_in_pot[player_to_act] == highest_bet:
         action = input("Would you like to bet or check? ")
+    else:
+        action = input("Would you like to fold, call or raise? ")
     
     while action not in ["fold", "call", "raise", "check", "bet"]:
         print("That is an invalid action, try again")
@@ -78,24 +74,28 @@ def make_decision(hands, player_to_act, no_of_players, highest_bet, preflop, fol
 
     return action
 
-def preflop_action(no_of_players, hands, player_to_act, highest_bet, preflop, folded, chips, money_in_pot):
-    extra_chips = 0
-    
+def action(no_of_players, hands, player_to_act, highest_bet, preflop, folded, chips, money_in_pot):
     for i in range(no_of_players):
-        player_to_act = (player_to_act + i) % no_of_players
-        action = make_decision(hands, player_to_act, no_of_players, highest_bet, preflop, folded, chips)
+        # Find player to act if players have folded
+        while folded[player_to_act]:
+            player_to_act = (player_to_act + 1) % no_of_players
+
+        action = make_decision(hands, player_to_act, no_of_players, highest_bet, preflop, folded, chips, money_in_pot)
+
+        call_amount = highest_bet - money_in_pot[player_to_act]
 
         if action == "fold":
             folded[player_to_act] = True
             
+            if folded.count(True) == 1:
+                break
+            
         elif action == "call":
-            call_amount = highest_bet - money_in_pot[player_to_act]
-
             if call_amount > chips[player_to_act]:
                 call_amount = chips[player_to_act]
 
-            extra_chips += call_amount
             money_in_pot[player_to_act] = highest_bet
+            chips[player_to_act] -= call_amount
             
         elif action == "raise":
             raise_amount = int(input("How much would you like to raise to? "))
@@ -105,14 +105,26 @@ def preflop_action(no_of_players, hands, player_to_act, highest_bet, preflop, fo
                 raise_amount = chips[player_to_act]
 
             highest_bet = raise_amount
-            money_in_pot[player_to_act] += raise_amount
+            money_in_pot[player_to_act] = raise_amount
+            chips[player_to_act] -= (raise_amount - money_in_pot[player_to_act])
 
-        else:
-            print("Cannot do that action preflop")
-            preflop_action(no_of_players, hands, player_to_act, highest_bet, preflop, folded, chips, money_in_pot)
-            break
+        elif action == "check":
+            continue
 
-    return extra_chips
+        elif action == "bet":
+            bet_amount = int(input("How much would you like to bet? "))
+
+            if bet_amount > chips[player_to_act]:
+                print("Cannot bet to more than you have, assumed all in")
+                bet_amount = chips[player_to_act]
+
+            highest_bet = bet_amount
+            money_in_pot[player_to_act] += bet_amount
+            chips[player_to_act] -= bet_amount
+
+        player_to_act = (player_to_act + 1) % no_of_players
+
+    # TODO: Need to continue action if bet or raise
 
 def main():
     # Welcome player
@@ -133,7 +145,7 @@ def main():
     starting_stack = int(input("How many chips do you want everyone to start with? "))
     chips = [starting_stack for _ in range(no_of_players)]
 
-    print("Ok gentlemen, the game is No Limit Texas Holdem, the blinds are 1/2, good luck everyone!")
+    print("Ok gentlemen, the game is No Limit Texas Holdem, $1 small blind, $2 big blind, good luck everyone!")
 
     while True:
         deck_of_cards = ["Ac", "Ad", "Ah", "As", "Kc", "Kd", "Kh", "Ks", "Qc", "Qd", "Qh", "Qs", 
@@ -156,15 +168,27 @@ def main():
         # Taking blinds
         money_in_pot[Small_Blind] += 1
         money_in_pot[Big_Blind] += 2
+        chips[Small_Blind] -= 1
+        chips[Big_Blind] -= 2
 
         highest_bet = 2
         pot = 3
 
         # Start with preflop action
         player_to_act = player_to_act_preflop(no_of_players, key_positions) 
-        extra_chips = preflop_action(no_of_players, hands, player_to_act, highest_bet, preflop, folded, chips, money_in_pot)
+        action(no_of_players, hands, player_to_act, highest_bet, preflop, folded, chips, money_in_pot)
 
-        pot += extra_chips
+        highest_bet = 0
+        pot = sum(money_in_pot)
+
+        if folded.count(True) > 1:
+            pass
+            # Flop
+
+            # Turn
+
+            # River
+        
 
         # For testing purposes
         print("Finished the hand!")
