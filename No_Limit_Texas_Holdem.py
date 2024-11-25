@@ -3,12 +3,14 @@ import Deck, Player
 
 class RunGame:
     def __init__(self, players):
+        # Initialise the deck, list of players, pot and community cards
         self.deck = Deck()
         self.players = players
         self.pot = 0
         self.community_cards = []
 
     def start_game(self):
+        # Shuffle the deck and deal each player their 2 hole cards
         self.deck.shuffle()
         for player in self.players:
             player.receive_cards(self.deck.deal(2))
@@ -18,14 +20,17 @@ class RunGame:
             print(f"{player.name}: {player.show_hand()}")
 
     def flop(self):
+        # Deal 3 cards for the flop
         self.community_cards.extend(self.deck.deal(3))
         print(f"Flop: {self.community_cards}")
 
     def turn(self):
+        # Deal 1 card for the turn
         self.community_cards.extend(self.deck.deal(1))
         print(f"Turn: {self.community_cards[-1]}")
 
     def river(self):
+        # Deal 1 card for the ruver
         self.community_cards.extend(self.deck.deal(1))
         print(f"River: {self.community_cards[-1]}")
 
