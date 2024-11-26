@@ -16,3 +16,6 @@ class Player:
         # Player receives 2 hole cards
         self.hand.extend(cards)
     
+    def show_hand(self):
+        return self.hand
+    
